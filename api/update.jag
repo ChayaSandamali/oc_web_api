@@ -2,13 +2,16 @@
 include("../util/operations_center_cache_manager.jag");
 
 	var log = new Log();
+
 	var messageBody = request.getContent();
-	var jsonString = stringify(messageBody);
-	var ocMessage = parse(jsonString);
+	//var jsonString = stringify(messageBody);
+	var ocMessage = parse(messageBody);
 
 
 	var servers = getServers(); 
 	var restartContent = [];
+
+	//log.info(ocMessage)
 
 	//log.info(servers[0])
 	if(ocMessage.synchronizationRequest){
@@ -29,11 +32,11 @@ include("../util/operations_center_cache_manager.jag");
         */
 
 		var msg = ocMessage.synchronizationRequest;
-		 log.info(msg)
+		//log.info(msg)
 		//log.info(msg.adminServiceUrl)		
 		//update the server statistics
 		//updateServer(msg.adminServiceUrl, msg.os, msg.ramFree, msg.usageSystem, msg.usageIdle, msg.usageUser, msg.serverUptime, msg.threadCount);
-		updateServer(msg.adminServiceUrl, msg.serverUpTime, msg.threadCount, msg.freeMemory, msg.idleCpuUsage, msg.systemCpuUsage, msg.userCpuUsage, msg.systemLoadAverage);
+		updateServer(msg.adminServiceUrl, msg.serverUpTime, parseFloat(msg.threadCount), parseFloat(msg.freeMemory), parseFloat(msg.idleCpuUsage), parseFloat(msg.systemCpuUsage), parseFloat(msg.userCpuUsage), parseFloat(msg.systemLoadAverage));
 		
 		//new cache update for chart 
 		updateCupUsage(msg.adminServiceUrl, msg.userCpuUsage, msg.idleCpuUsage, msg.systemCpuUsage, msg.freeMemory, msg.systemLoadAverage);

@@ -33,7 +33,7 @@ function test(){
 function addServerMeta(name, domain, subDomain, adminServiceUrl, startUpTime, patches) {
 	var registryPath = PATH + 'servers/' + getFileName(adminServiceUrl) + ".xml";
 	var resource = dataStore.newResource();
-	//log.info(name)
+	//log.info(stringify(patches))
 	
 	var resource = dataStore.newResource();
 		resource.content = name;
@@ -42,7 +42,7 @@ function addServerMeta(name, domain, subDomain, adminServiceUrl, startUpTime, pa
 		resource.addProperty("subDomain", ""+subDomain);
 		resource.addProperty("adminServiceUrl", adminServiceUrl);
 		resource.addProperty("startUpTime", ""+startUpTime);
-		resource.addProperty("patches", ""+patches);
+		resource.addProperty("patches", stringify(patches));
 		dataStore.put(registryPath, resource);
 }
 
@@ -63,7 +63,7 @@ function addMachineMeta(ip, osName, cpuCount, cpuSpeed, totalMemory) {
 //------------------------------
 /*
 These two getServerMeta and getMachineMeta
-	return or print individual server or machine meta data
+	return individual server or machine meta data
 	according to the url
 */
 
@@ -90,14 +90,7 @@ function getServerMeta(adminServiceUrl){
 		serverMeta.patches = res.getProperty("patches");
 	}
 
-	if(isUrl(adminServiceUrl)){
-		log.info("Printing...");
-		print(serverMeta);		
-	}else{
-		log.info("Returning");
-		//log.info(serverMeta);
-		return serverMeta;
-	}
+	return serverMeta;
 }
 
 //getMachineMeta
@@ -123,16 +116,8 @@ function getMachineMeta(ip){
 		machineMeta.totalMemory = res.getProperty("totalMemory");
 	}
 	log.info(machineMeta);
-	// print(machineMeta);
 
-	if(isUrl(ip)){
-		log.info("Printing...");
-		print(machineMeta);		
-	}else{
-		log.info("Returning");
-		//log.info(machineMeta);
-		return machineMeta;
-	}
+	return machineMeta;
 }
 
 //------------------------------
@@ -142,7 +127,7 @@ function getMachineMeta(ip){
 function getAllServerMeta(){
 	var serversMeta = getAllRegistryMeta('servers');
 	log.info('----ALL META [SERVERS]---');
-	print(serversMeta);
+	return serversMeta;
 	log.info('----END---');
 }
 
@@ -151,7 +136,7 @@ function getAllServerMeta(){
 function getAllMachineMeta(){
 	var machinesMeta = getAllRegistryMeta('machines');
 	log.info('----ALL META [MACHINES]---');
-	print(machinesMeta);
+	return machinesMeta;
 	log.info('----END---');
 }
 

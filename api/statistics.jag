@@ -4,53 +4,106 @@ include("../util/metadata.jag");
 
 var url = request.getParameter('url'); //adminServiceUrl or Ip of the pc
 var asset = request.getParameter('asset'); //(machine or server) plural -> all / singuler -> one
-var statistics = request.getParameter('stat'); //boolean value
+var dataType = request.getParameter('type'); //(static / dynamic)
+
+/*
+	//static data
+	base_url/asset=servers&type=static
+	base_url/asset=servers&type-dynamic
+
+*/
 
 
-//static data display
-if(asset && url){
+//static data display (single data)
+if(asset && url && dataType == 'static'){
+	var data = "";
 	switch(asset){
+		
 		case 'server':
-
-		break;
-
-		case 'servers':
-
+			data = getServerMeta(url);
 		break;
 
 		case 'machine':
-
+			data = getMachineMeta(url);
 		break;
 
-		case 'machines':
-
-		break;
 	}
+
+	print(data);
 }
 
-//dynamic data display
-if(asset && url && statistics){
+//dynamic data display for single asset
+else if(asset && url && dataType == 'dynamic'){
+	var data = null;
+
 	switch(asset){
+		
 		case 'server':
-
-		break;
-
-		case 'servers':
-
+			data = "";
 		break;
 
 		case 'machine':
+			data = "";
+		break;
+	}
 
+	print(data);
+}
+
+
+//static data display (all static data)
+else if(asset && dataType == 'static'){
+	var data = null;
+	switch(asset){
+		
+		case 'servers':
+			data = getAllServerMeta();
 		break;
 
 		case 'machines':
+			data = getAllMachineMeta();
+		break;
 
+		case 'm':
+			data = getMachines();
+		break;
+
+		case 's':
+			data = getServers();
+		break;
+		
+	}
+
+	print(data);
+}
+
+//dynamic data display all specific assets
+else if(asset && dataType == 'dynamic'){
+	var data = null;
+
+	switch(asset){
+
+		case 'servers':
+			data = getServers();
+		break;
+
+		case 'machines':
+			data = getMachines();
 		break;
 	}
+
+	print(data);
 }
+
+
+
+
+
+
+//---------------------------------
+
 
 //graph data display
-
 
 
 
