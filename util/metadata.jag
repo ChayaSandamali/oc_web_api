@@ -1,0 +1,220 @@
+<%
+//This is for storing metadata to registry 
+//store  Server
+//store  Machine
+
+var userName = "admin";
+var password = "admin";
+var PATH = "oc/" + userName + "/"; // (oc/admin/servers/192.168.1.1:8080.xml)
+
+var dataStore = new MetadataStore(userName, password);
+
+var log = new Log("metadata");
+
+/*
+function test(){
+	log.info('start')
+	//var dataStore = new MetadataStore("admin", "admin");
+	var resource = dataStore.newResource();
+	resource.content = "<a>Hello Jaggery</a>";
+	resource.addProperty("url", "http://wso2.com");
+	resource.addProperty("company", "WSO2 Inc.");
+	dataStore.put("oc/wso2products.xml", resource);
+	log.info('end')
+}
+*/
+
+/*
+	setters to new meta data
+*/
+
+
+//addServerMeta
+function addServerMeta(name, domain, subDomain, adminServiceUrl, startUpTime, patches) {
+	var registryPath = PATH + 'servers/' + getFileName(adminServiceUrl) + ".xml";
+	var resource = dataStore.newResource();
+	//log.info(name)
+	
+	var resource = dataStore.newResource();
+		resource.content = name;
+		resource.addProperty("name", ""+name);
+		resource.addProperty("domain", ""+domain);
+		resource.addProperty("subDomain", ""+subDomain);
+		resource.addProperty("adminServiceUrl", adminServiceUrl);
+		resource.addProperty("startUpTime", ""+startUpTime);
+		resource.addProperty("patches", ""+patches);
+		dataStore.put(registryPath, resource);
+}
+
+
+//addMachineMeta
+function addMachineMeta(ip, osName, cpuCount, cpuSpeed, totalMemory) {
+	var registryPath = PATH + 'machines/' + ip + ".xml";
+	var resource = dataStore.newResource();
+		resource.content = osName;
+		resource.addProperty("ip", ""+ip);
+		resource.addProperty("osName", ""+osName);
+		resource.addProperty("cpuCount", ""+cpuCount);
+		resource.addProperty("cpuSpeed", ""+cpuSpeed);
+		resource.addProperty("totalMemory", ""+totalMemory);
+		dataStore.put(registryPath, resource);
+}
+
+//------------------------------
+/*
+These two getServerMeta and getMachineMeta
+	return or print individual server or machine meta data
+	according to the url
+*/
+
+//getServerMeta
+function getServerMeta(adminServiceUrl){
+	var serverMeta =  {};
+	var registryPath = null;
+
+	if(isUrl(adminServiceUrl)){
+		registryPath = PATH + 'servers/' + getFileName(adminServiceUrl) + ".xml";		
+	}else{
+		registryPath = adminServiceUrl;
+	}
+
+	if(isRegistryExist(registryPath)){
+		var res = dataStore.get(registryPath); 
+		
+		serverMeta.content = res.content.toXMLString();
+		serverMeta.name = res.getProperty("name");
+		serverMeta.domain = res.getProperty("domain");
+		serverMeta.subDomain = res.getProperty("subDomain");
+		serverMeta.adminServiceUrl = res.getProperty("adminServiceUrl");
+		serverMeta.startUpTime = res.getProperty("startUpTime");
+		serverMeta.patches = res.getProperty("patches");
+	}
+
+	if(isUrl(adminServiceUrl)){
+		log.info("Printing...");
+		print(serverMeta);		
+	}else{
+		log.info("Returning");
+		//log.info(serverMeta);
+		return serverMeta;
+	}
+}
+
+//getMachineMeta
+function getMachineMeta(ip){
+	var machineMeta =  {};
+	var registryPath = null;
+
+	if(isUrl(ip)){
+		registryPath = PATH + 'machines/' + ip + ".xml";		
+	}else{
+		registryPath = ip;
+	}
+
+	log.info(registryPath)
+	if(isRegistryExist(registryPath)){
+		var res = dataStore.get(registryPath); 
+		
+		machineMeta.content = res.content.toXMLString();
+		machineMeta.ip = res.getProperty("ip");
+		machineMeta.osName = res.getProperty("osName");
+		machineMeta.cpuCount = res.getProperty("cpuCount");
+		machineMeta.cpuSpeed = res.getProperty("cpuSpeed");
+		machineMeta.totalMemory = res.getProperty("totalMemory");
+	}
+	log.info(machineMeta);
+	// print(machineMeta);
+
+	if(isUrl(ip)){
+		log.info("Printing...");
+		print(machineMeta);		
+	}else{
+		log.info("Returning");
+		//log.info(machineMeta);
+		return machineMeta;
+	}
+}
+
+//------------------------------
+//helper functions to get all servers and machines memta data
+
+//getAllServerMeta
+function getAllServerMeta(){
+	var serversMeta = getAllRegistryMeta('servers');
+	log.info('----ALL META [SERVERS]---');
+	print(serversMeta);
+	log.info('----END---');
+}
+
+
+//getAllMachineMeta
+function getAllMachineMeta(){
+	var machinesMeta = getAllRegistryMeta('machines');
+	log.info('----ALL META [MACHINES]---');
+	print(machinesMeta);
+	log.info('----END---');
+}
+
+//end helper function
+
+
+//to get all registry data 
+//simply add a new case and add metaType get method
+function getAllRegistryMeta(metaType){
+	var metaArray = [];
+	var registryPath = PATH + metaType;	
+	
+	var registryCollection = dataStore.get(registryPath);
+	var registryFilePathArray = registryCollection.getChildren()
+	
+	for(var i in registryFilePathArray){
+		var metaData = null;
+		switch(metaType){
+
+			case 'servers':
+				metaData = getServerMeta(registryFilePathArray[i]);
+			break;
+
+			case 'machines':
+				metaData = getMachineMeta(registryFilePathArray[i]);
+			break;
+
+		}
+		
+		metaArray.push(metaData);
+	}
+
+	return metaArray;
+}
+
+//------------------------------
+
+//isServerExist
+//isMachineExist
+function isRegistryExist(registryPath){
+	return dataStore.resourceExists(registryPath);
+}
+
+
+//getFolderName(adminUrl)
+
+//check weather this is the full file path to registry or just admin url
+function isUrl(str){
+	return !(str.indexOf("servers") > -1 || str.indexOf("machines") > -1);
+}
+
+/*
+	convert the url to file name format
+ 	format >> remove all "/" and remove "https"
+ 	ex: 192.168.1.1:8080.xml
+*/
+function getFileName(adminServiceUrl){
+	var folderName = adminServiceUrl;
+	var re = new RegExp('/', 'g');
+	folderName = folderName.replace(re, '');
+	re = new RegExp('https:', 'g');
+	folderName = folderName.replace(re, '');
+	return folderName;
+}
+
+%>

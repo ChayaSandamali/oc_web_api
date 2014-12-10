@@ -1,0 +1,443 @@
+<%
+
+
+var Command = {
+    GRACEFULL_SHUTDOWN : 'GRACEFUL_SHUTDOWN',
+    GRACEFULL_RESTART : 'GRACEFUL_RESTART',
+    SHUTDOWN : 'SHUTDOWN',
+    RESTART : 'RESTART'
+}
+
+var Status = {
+    PENDING_SHUTDOWN : 'PENDING_SHUTDOWN',
+    PENDING_RESTART :'PENDING_RESTART',
+    GRACEFULL_SHUTDOWN : 'GRACEFULL_SHUTTING_DOWN',
+    GRACEFULL_RESTART : 'GRACEFULL_RESTARTING',
+    RESTARTING : 'RESTARTING',
+    SHUTTING_DOWN : 'SHUTTING_DOWN',
+    SERVER_DOWN : 'SERVER_DOWN',
+    NOT_REPORTING: 'NOT_REPORTING',
+    RUNNING: 'RUNNING',
+    REGISTERED: 'REGISTERED'
+}
+
+var log = new Log();
+var machineId = 1;
+var serverId = 1;
+//cache data for view on chart 
+var chartCache = [];
+//messages cache per node for 10 min
+var chartMessageLength = 120;
+//messages per min
+var minMessage = 12;
+//max min for saving cache
+var maxMin = 10;
+
+function getOperationsCenterCache() {
+    var operationsCenterCache = application.get('operationsCenterCache');  
+
+    if (operationsCenterCache == null){
+        log.info("Creating Operations Center Cache");
+        operationsCenterCache = new Array();
+        application.put('operationsCenterCache', operationsCenterCache);
+    }
+    return operationsCenterCache;
+}
+
+/*
+    [Machine]
+    ip
+    osName
+    cpuCount    
+    cpuSpeed
+    totalMemory
+*/
+function addMachine(ip, osName, cpuCount, cpuSpeed, totalMemory) {
+    // [DEBUG]
+    /*
+    log.info(ip)
+    log.info(osName)
+    log.info(cpuCount)
+    log.info(cpuSpeed)
+    log.info(totalMemory)
+    */
+
+
+    var ocMachines = getMachines();
+    var ocMachine = null;
+    for (var index = 0; index < ocMachines.length; index++){
+        var tempMachine = ocMachines[index];
+        if (tempMachine != null) {
+            if (tempMachine.ip == ip) {
+                ocMachine = tempMachine.id;
+            }
+        }
+    }
+    if (ocMachine == null) {
+        ocMachine = new Object();
+        ocMachine.ip = ip;
+        ocMachine.osName = osName;
+        ocMachine.cpuCount = cpuCount;
+        ocMachine.cpuSpeed = cpuSpeed;
+        ocMachine.totalMemory = totalMemory;
+
+        ocMachine.id = machineId++;
+        ocMachines[ocMachines.length] = ocMachine;
+    }
+    return ocMachine.id;
+}
+
+function getMachines() {
+    var ocCache = getOperationsCenterCache();
+    var ocMachines = ocCache.machines;
+    if (ocMachines == null) {
+        ocMachines = new Array();
+        ocCache.machines = ocMachines;
+    }
+    return ocMachines;
+}
+
+function getChartCache(){
+    var ocCache = getOperationsCenterCache();
+    var chartCache = ocCache.chartCache;
+    if (chartCache == null) {
+        chartCache = new Array();
+        ocCache.chartCache = chartCache;
+    }
+    return chartCache;
+}
+
+/*
+    [Server]
+    serverName
+    domain
+    subDomain            
+    adminServiceUrl
+    startUpTime
+*/
+function addServer(machineId, name, domain, subDomain, adminServiceUrl, startUpTime, patches) {
+    // [DEBUG]
+    /*
+    log.info(machineId)
+    log.info(name)
+    log.info(domain)
+    log.info(subDomain)
+    log.info(adminServiceUrl)
+    log.info(startUpTime)
+    log.info(patches)
+    */
+
+    var ocServers = getServers();
+    var ocServer = null;
+    for (var index = 0; index < ocServers.length; index++){
+        var tempServer = ocServers[index];
+        if (tempServer != null) {
+            if (tempServer.adminServiceUrl == adminServiceUrl) {
+                ocServer = tempServer;
+            }
+        }
+    }
+    if (ocServer == null) {
+        ocServer = new Object();
+        ocServer.id = ocServers.length;
+        ocServer.machineId = machineId;
+        ocServer.name = name;
+        ocServer.domain = domain;
+        ocServer.subDomain = subDomain;
+        ocServer.adminServiceUrl = adminServiceUrl;
+        ocServer.startUpTime = startUpTime;
+        ocServer.patches = patches;
+
+        ocServer.status = "REGISTERED";
+
+        //---------
+        var date = new Date();
+        var reportedTime = date.getTime();
+        ocServer.reportedTime = reportedTime;
+        //----------
+
+        ocServers[ocServers.length] = ocServer;
+    }
+
+    //log.info(ocServer)
+    return ocServer.id;
+}
+
+function getServers() {
+var ocCache = getOperationsCenterCache();
+    var ocServers = ocCache.servers;
+    if (ocServers == null) {
+        ocServers = new Array();
+        ocCache.servers = ocServers;
+    }
+    return ocServers;
+}
+
+function test(test){
+    var log = new Log('test');
+    log.info('++++Test++++');
+    log.info(test);
+}
+
+
+
+//newly added method for cache the cpu usage plot data for 10 min
+function updateCupUsage(adminServiceUrl, user, idel, system, freeMemory, loadAverage){
+    //log.info('-----')
+    chartCache = null;
+    var chartCache = getChartCache();
+    //log.info(chartCache[0])
+
+    var found = false;
+
+    //log.info(chartCache);
+    
+    for(var i = 0; i < chartCache.length; i++){
+        //log.info('test')
+
+        //current node
+        var node = chartCache[i];
+        //log.info(node)
+        var nodeAdminServiceUrl = node.adminServiceUrl;
+        //log.info(nodeAdminServiceUrl)
+        //log.info(i)
+        
+        if(nodeAdminServiceUrl == adminServiceUrl){
+            //log.info('found')
+            found = true;
+
+            var counter = node.counter;
+            if(isNaN(parseFloat(counter) || typeof(counter) == "undefined")){
+                counter = 0;
+            }
+
+            //data array position
+            var pos = counter % chartMessageLength;
+        
+            //new update object
+            var newCupUsage = {
+                "user" : user,
+                "idel" : idel,
+                "system" : system
+            };        
+
+            var newFreeMemory = {
+                "freeMemory" : freeMemory
+            }
+
+            var newLoadAverage = {
+                "loadAverage" : loadAverage
+            }
+
+            //available free memory
+            node.freeMemory[pos] = newFreeMemory;
+           
+            //load average
+            node.loadAverage[pos] = newLoadAverage;
+
+            //update or add new cpu usage
+            node.cpuUsage[pos] = newCupUsage;
+            
+             //update the new position [counter]
+            node.counter = pos+1;
+
+            //log.info(node);
+            
+        }       
+    }
+
+    //add new chart cache object
+    if(!found){
+        var cpuUsageArr = [];
+        var freeMemoryArr = [];
+        var loadAverageArr = [];
+
+        var newCupUsage = {
+                "user" : user,
+                "idel" : idel,
+                "system" : system
+        };  
+
+        var newFreeMemory = {
+                "freeMemory" : freeMemory
+        }
+
+        var newLoadAverage = {
+            "loadAverage" : loadAverage
+        }
+
+        cpuUsageArr.push(newCupUsage);
+        freeMemoryArr.push(newFreeMemory);
+        loadAverageArr.push(newLoadAverage);
+
+        var newCpuCache = {
+            "adminServiceUrl" : adminServiceUrl,            
+            "cpuUsage" : cpuUsageArr,
+            "freeMemory" : freeMemoryArr,
+            "loadAverage" : loadAverageArr,
+            "counter": 0
+        }
+
+
+
+
+        chartCache.push(newCpuCache);
+        // log.info(newCpuCache)
+        //log.info('not found')
+
+    }
+    
+    /*log.info(getChartCache()[0].counter)
+    log.info(getChartCache()[1].counter)*/
+    // log.info("count: ")
+    //log.info(chartCache[0])
+    //log.info(chartCache.cpuUsage.length)
+    //log.info(getChartCache()[1].counter)
+}
+
+
+//new func
+/*function updateServer(adminServiceUrl, osName, ramFree, useageSystem, useageIdel, useageUser, upTime, threadCount, loadAverage){
+    var log = new Log('updateServer');
+    var ocServers = getServers();
+    var ocServer = null;
+    for (var index = 0; index < ocServers.length; index++){
+        var tempServer = ocServers[index];
+        if (tempServer != null) {
+            if (tempServer.adminServiceUrl == adminServiceUrl) {
+                ocServer = tempServer;
+            }
+        }
+    }
+
+    if(ocServer){
+        ocServer.osName = osName;
+        ocServer.ramFree = ramFree;
+        ocServer.useageSystem = useageSystem;
+        ocServer.useageIdel = useageIdel;
+        ocServer.useageUser = useageUser;
+        ocServer.status = "RUNNING";
+        ocServer.upTime = upTime;
+        ocServer.threadCount = threadCount;
+        ocServer.loadAverage = loadAverage;
+        //---------
+        var date = new Date();
+        var reportedTime = date.getTime();
+        ocServer.reportedTime = reportedTime;
+        //----------
+        ocServers[ocServer.id] = ocServer;
+        // ocServers[ocServers.length] = ocServer;
+    }
+    //log.info("++UPDATING REST CALL++")
+
+
+}*/
+
+function updateServer(adminServiceUrl, serverUpTime, threadCount, freeMemory, usageIdle, usageSystem, usageUser, loadAverage){
+    var log = new Log('updateServer');
+    // [DEBUG]
+    /*log.info(adminServiceUrl)
+    log.info(serverUpTime)
+    log.info(threadCount)
+    log.info(freeMemory)
+    log.info(usageIdle)
+    log.info(usageSystem)
+    log.info(usageUser)
+    log.info(loadAverage)
+    log.info('\n')*/
+
+
+    var ocServers = getServers();
+    var ocServer = null;
+    for (var index = 0; index < ocServers.length; index++){
+        var tempServer = ocServers[index];
+        if (tempServer != null) {
+            if (tempServer.adminServiceUrl == adminServiceUrl) {
+                ocServer = tempServer;
+            }
+        }
+    }
+
+    if(ocServer){
+        ocServer.freeMemory = freeMemory;
+        ocServer.usageIdle = usageIdle;
+        ocServer.usageSystem = usageSystem;
+        ocServer.usageUser = usageUser;
+        ocServer.serverUpTime = serverUpTime;
+        ocServer.threadCount = threadCount;
+        ocServer.loadAverage = loadAverage;
+
+         
+        if(ocServer.status != Status.RESTARTING || ocServer.status != Status.GRACEFULL_SHUTTING_DOWN || ocServer.status != Status.GRACEFULL_RESTARTING) {
+            ocServer.status = Status.RUNNING;
+        } 
+
+        if(ocServer.status == Status.REGISTERED){
+            ocServer.status = ocServer.Status.RUNNING;
+        }    
+        
+        //---------
+        var date = new Date();
+        var reportedTime = date.getTime();
+        ocServer.reportedTime = reportedTime;
+        //----------
+        ocServers[ocServer.id] = ocServer;
+        // ocServers[ocServers.length] = ocServer;
+    }
+}
+        
+
+//updateMachine(msg.ip, msg.cpuCount, msg.cpuSpeed, msg.ramTotal);
+function updateMachine(ip, os, cpuCount, cpuSpeed, ramTotal){
+
+    var ocMachines = getMachines();
+    var ocMachine = null;
+    for (var index = 0; index < ocMachines.length; index++){
+        var tempMachine = ocMachines[index];
+        if (tempMachine != null) {
+            if (tempMachine.ip == ip) {
+                ocMachine = tempMachine;
+            }
+        }
+    }
+
+    if(ocMachine){
+        ocMachine.os = os;
+        ocMachine.cpuCount = cpuCount;
+        ocMachine.cpuSpeed = cpuSpeed;
+        ocMachine.ramTotal = ramTotal;
+        ocMachines[ocMachine.id] = ocMachine;
+    }
+
+    //log.info(ocMachine)
+
+    //log.info('updateMachine')
+}
+
+//to add restart, shutdown commands
+function addCommand(adminServiceUrl, command, status){
+
+    var ocServers = getServers();
+    var ocServer = null;
+    for (var index = 0; index < ocServers.length; index++){
+        var ocServer = ocServers[index];
+        if (ocServer != null) {
+            if (ocServer.adminServiceUrl == adminServiceUrl) {
+               // log.info(ocServer.name)     
+                ocServer.command = command;
+                ocServer.status = status;
+                ocServers[ocServer.id] = ocServer;
+            }
+        }
+    }
+
+    // if(ocServer){
+        
+    // }
+    // print(ocServer)
+    //log.info("Command: " + command)
+}
+
+
+
+%>

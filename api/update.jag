@@ -1,0 +1,179 @@
+<%
+include("../util/operations_center_cache_manager.jag");
+
+	var log = new Log();
+	var messageBody = request.getContent();
+	var jsonString = stringify(messageBody);
+	var ocMessage = parse(jsonString);
+
+
+	var servers = getServers(); 
+	var restartContent = [];
+
+	//log.info(servers[0])
+	if(ocMessage.synchronizationRequest){
+
+		
+
+		 /*
+            [Server]
+            adminServiceUrl
+            serverUpTime
+            threadCount
+
+            [Machine]
+            freeMemory
+            usageIdle
+            usageSystem
+            usageUser
+        */
+
+		var msg = ocMessage.synchronizationRequest;
+		 log.info(msg)
+		//log.info(msg.adminServiceUrl)		
+		//update the server statistics
+		//updateServer(msg.adminServiceUrl, msg.os, msg.ramFree, msg.usageSystem, msg.usageIdle, msg.usageUser, msg.serverUptime, msg.threadCount);
+		updateServer(msg.adminServiceUrl, msg.serverUpTime, msg.threadCount, msg.freeMemory, msg.idleCpuUsage, msg.systemCpuUsage, msg.userCpuUsage, msg.systemLoadAverage);
+		
+		//new cache update for chart 
+		updateCupUsage(msg.adminServiceUrl, msg.userCpuUsage, msg.idleCpuUsage, msg.systemCpuUsage, msg.freeMemory, msg.systemLoadAverage);
+
+		//updateMachine(msg.ip, msg.os, msg.cpuCount, msg.cpuSpeed, msg.ramTotal);
+
+
+
+//STATUS update --------------------------------------------------------------------------------------------
+		//check the enabled restart command and get adminUrl
+		if(msg.adminServiceUrl){
+			/*var code = "";
+			var status = "";*/
+			//log.info(msg.adminServiceUrl)
+			for(var i = 0; i < servers.length; i++){			
+
+				//restart serverWSO2 API Manager	-
+				if(servers[i].command == Command.RESTART){
+
+					servers[i].status = Status.PENDING_RESTART;
+
+					if(servers[i].adminServiceUrl == msg.adminServiceUrl){
+							
+							var content = {};							
+							content.command = Command.RESTART;	
+
+							sendResponse(content);
+							
+							servers[i].command = Status.RESTARTING;
+					}else{
+						response.status = 200;
+					}
+
+				}
+
+				//shutdown server
+				else if(servers[i].command == Command.SHUTDOWN){
+
+					servers[i].status = Status.PENDING_SHUTDOWN;
+
+					if(servers[i].adminServiceUrl == msg.adminServiceUrl){
+							
+							var content = {};							
+							content.command = Command.SHUTDOWN;	
+
+							sendResponse(content);
+							
+							servers[i].command = Status.SHUTTING_DOWN;
+					}else{
+						response.status = 200;
+					}
+
+				}
+
+				//gracefull restart server
+				else if(servers[i].command == Command.GRACEFULL_RESTART){
+
+					servers[i].status = Status.PENDING_RESTART;
+
+					if(servers[i].adminServiceUrl == msg.adminServiceUrl){
+							
+							var content = {};							
+							content.command = Command.GRACEFULL_RESTART;	
+
+							sendResponse(content);
+							
+							servers[i].command = Status.GRACEFULL_RESTART;
+					}else{
+						response.status = 200;
+					}
+
+				}
+
+				//gracefull shutdown server
+				else if(servers[i].command == Command.GRACEFULL_SHUTDOWN){
+
+					servers[i].status = Status.PENDING_SHUTDOWN;
+
+					if(servers[i].adminServiceUrl == msg.adminServiceUrl){
+							
+							var content = {};							
+							content.command = Command.GRACEFULL_SHUTDOWN;	
+
+							sendResponse(content);
+							
+							servers[i].command = Status.GRACEFULL_SHUTDOWN;
+					}else{
+						response.status = 200;
+					}
+
+				}
+			}
+
+
+
+
+		}
+
+
+		//update status and reset commands	
+		for(var i = 0; i < servers.length; i++){
+			if(servers[i].command == Status.RESTARTING){			
+				servers[i].status = Status.RESTARTING;
+				servers[i].command = "";
+			}
+			else if(servers[i].command == Status.SHUTTING_DOWN){			
+				servers[i].status = Status.SHUTTING_DOWN;
+				servers[i].command = "";
+			}
+			else if(servers[i].command == Status.GRACEFULL_RESTART){			
+				servers[i].status = Status.GRACEFULL_RESTART;
+				servers[i].command = "";
+			}
+			else if(servers[i].command == Status.GRACEFULL_SHUTDOWN){			
+				servers[i].status = Status.GRACEFULL_SHUTDOWN;
+				servers[i].command = "";
+			}
+		}
+
+
+	}
+
+	
+	function sendResponse(content){
+                var customResponse = {};
+                var synchronizationResponse = {};
+                customResponse.synchronizationResponse = synchronizationResponse;
+                
+                synchronizationResponse.status = "updated";
+                synchronizationResponse.serverId = "2";
+                synchronizationResponse.command = content.command;
+		response.addHeader("custom-header", "jaggery_response");
+		response.contentType = 'application/json';
+		response.content = customResponse;
+		response.status = 200;
+	}
+
+	
+	
+	//updateServer(ocMessage.adminServiceUrl, ocMessage.osName, ocMessage.ramFree, ocMessage.usageSystem, ocMessage.usageIdel, ocMessage.usageUser, "RUNNING");
+	// {"update" : {"cpuCount" : "4", "os" : "Linux Mint 17 Qiana", "cpuSpeed" : "2.4", "usageSystem" : "6.751465067919739", "ramFree" : "515", "usageIdle" : "67.96104852984925", "usageUser" : "25.28749036623022", "ramTotal" : "7715"}}
+
+%>

@@ -1,0 +1,57 @@
+<%
+include("../util/operations_center_cache_manager.jag");
+include("../util/metadata.jag");
+
+var url = request.getParameter('url'); //adminServiceUrl or Ip of the pc
+var asset = request.getParameter('asset'); //(machine or server) plural -> all / singuler -> one
+var statistics = request.getParameter('stat'); //boolean value
+
+
+//static data display
+if(asset && url){
+	switch(asset){
+		case 'server':
+
+		break;
+
+		case 'servers':
+
+		break;
+
+		case 'machine':
+
+		break;
+
+		case 'machines':
+
+		break;
+	}
+}
+
+//dynamic data display
+if(asset && url && statistics){
+	switch(asset){
+		case 'server':
+
+		break;
+
+		case 'servers':
+
+		break;
+
+		case 'machine':
+
+		break;
+
+		case 'machines':
+
+		break;
+	}
+}
+
+//graph data display
+
+
+
+
+%>

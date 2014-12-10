@@ -1,0 +1,106 @@
+<%
+include("../util/operations_center_cache_manager.jag");
+include("../util/metadata.jag");
+
+var log = new Log();
+var verb = request.getMethod();
+
+if (verb == "POST") {
+    var authorization = request.getHeader('authorization');
+
+    if (authorization == "Basic YWRtaW46YWRtaW4=") {
+        log.info("Login success");
+
+       /*
+            [Server]
+            serverName
+            domain
+            subDomain            
+            adminServiceUrl
+            startUpTime
+
+            [Machine]
+            ip
+            osName
+            cpuCount
+            totalMemory
+            cpuSpeed
+        */
+
+        var messageBody = request.getContent();
+        
+        var registration_request = parse(messageBody);
+        //get the registration message
+        //var reg_msg = registration_request.register;
+        var reg_msg = registration_request.registrationRequest;
+
+        //add new machine to cache
+        var machineId = addMachine(reg_msg.ip, 
+                                    reg_msg.os, 
+                                    reg_msg.cpuCount, 
+                                    reg_msg.cpuSpeed, 
+                                    reg_msg.totalMemory)
+
+        //add new server to cache
+        var serverId = addServer(machineId,
+                                 reg_msg.serverName,
+                                 reg_msg.domain,
+                                 reg_msg.subDomain,
+                                 reg_msg.adminServiceUrl,
+                                 reg_msg.startUpTime,
+                                  reg_msg.patches);
+
+
+        //add to registry
+        addServerMeta(reg_msg.serverName,
+                     reg_msg.domain,
+                     reg_msg.subDomain,
+                     reg_msg.adminServiceUrl,
+                     reg_msg.startUpTime,
+                     reg_msg.patches
+                     );
+
+        addMachineMeta(reg_msg.ip, 
+                        reg_msg.os, 
+                        reg_msg.cpuCount, 
+                        reg_msg.cpuSpeed, 
+                        reg_msg.totalMemory);
+
+
+
+        //add to meta data storage
+        /*
+        addServerMeta(machineId,
+                     reg_msg.serverName,
+                     reg_msg.domain,
+                     reg_msg.subDomain,
+                     reg_msg.adminServiceUrl,
+                     reg_msg.startUpTime,
+                      reg_msg.patches);
+
+        addMachineMeta(reg_msg.ip, 
+                        reg_msg.os, 
+                        reg_msg.cpuCount, 
+                        reg_msg.cpuSpeed, 
+                        reg_msg.totalMemory);
+
+
+        
+        log.info(registration_request);
+
+        response.contentType = 'application/json';
+        response.content = '{"registrationResponse" : {"serverId" : "' + serverId + '"}}';
+        response.status = 201;
+        */
+        
+
+    } else {
+        log.info("Login failed");
+        response.status = 500;
+    }
+}
+
+    
+
+
+%>
