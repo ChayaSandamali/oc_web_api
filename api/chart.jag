@@ -1,10 +1,257 @@
 <%
+/*
+    RESTFULL
+    /{context}/{dir}/{page}/{type}
+    /oc/api/chart/memory >> return free memeory statistics
+*/
+
+//Need to handle errors {try catch}
+
+include("../util/operations_center_cache_manager.jag");
+include("../util/metadata.jag")
+
 var data1 = [];
 var data2 = [];
 totalPoints = 50;
 
-var type = request.getParameter('data');
 
+var uriMatcher = new URIMatcher(request.getRequestURI());
+var elements = {};
+    //print(request.getRequestURI());
+
+
+if(uriMatcher.match('/{context}/{dir}/{page}/{type}')) {
+   elements = uriMatcher.elements();
+}
+
+if(uriMatcher.match('/{context}/{dir}/{page}/{type}/{id}')) {
+   elements = uriMatcher.elements();
+}
+
+if(elements.type == "testid"){
+    print(idLoadAverage(elements.id))
+}
+
+//restfull call
+if(elements.type == 'random'){
+	print(getRandomData());
+}
+
+if(elements.type == 'usage'){
+   print(getCpuUsage());   
+}
+
+if(elements.type == 'memory'){
+   print(getFreeMemory());
+}
+
+if(elements.type == 'load'){
+    print(getLoadAverage());
+    
+}
+
+if(elements.type == 'test'){
+    //print(getChartCache()[0]);
+}
+
+function idLoadAverage(id){
+    var loadAverage = [];
+    var servers = getChartCache();
+
+    var tempId = "";
+    var tempServer = "";
+   if(servers.length > 0) {
+        
+        servers.map(function(s){
+            tempId = getId(s.adminServiceUrl);
+            //print(tempId)
+            
+            if(id == tempId){
+                tempServer = s;
+            }
+        });
+    }
+
+        //print(tempServer.adminServiceUrl);
+        if(tempServer.loadAverage){
+
+                var loadArray = tempServer.loadAverage;
+                //illution of movement
+                var temp = loadArray.shift();
+                loadArray.push(temp);
+            
+                var iCount = 1;
+                loadArray.map(function(load){
+                    
+                    try{
+                        if(typeof load.loadAverage != 'undefined'){
+                            loadAverage.push([iCount, parseFloat(load.loadAverage)])
+                            iCount++;
+                        }  
+                    }catch(err){
+                        //log.info('loadAverage property is undefined : ' + load);
+                        load = {};
+                        load.loadAverage = 0.0;
+                        
+                    }
+                              
+                });
+            
+                return [
+                    {
+                        "series1":{label: "load average", data: loadAverage} 
+                    }
+                ];
+            }else{
+                
+                loadAverage = [];
+                loadAverage.push([0, 0]);
+
+                return [
+                    {
+                        "series1":{label: "load average", data: loadAverage} 
+                    }
+                ];
+            }
+        
+}
+
+
+function getLoadAverage(){
+    var loadAverage = [];
+    var servers = getChartCache();
+
+   if(servers.length > 0) {
+        var loadArray = servers[0].loadAverage;
+        //illution of movement
+        var temp = loadArray.shift();
+        loadArray.push(temp);
+    
+        var iCount = 1;
+        loadArray.map(function(load){
+            
+            try{
+                if(typeof load.loadAverage != 'undefined'){
+                    loadAverage.push([iCount, parseFloat(load.loadAverage)])
+                    iCount++;
+                }  
+            }catch(err){
+                //log.info('loadAverage property is undefined : ' + load);
+                load = {};
+                load.loadAverage = 0.0;
+                
+            }
+                      
+        });
+    
+        return [
+            {
+                "series1":{label: "load average", data: loadAverage} 
+            }
+        ];
+    }else{
+        
+        loadAverage = [];
+        loadAverage.push([0, 0]);
+
+        return [
+            {
+                "series1":{label: "load average", data: loadAverage} 
+            }
+        ];
+    }
+}
+
+function getFreeMemory(){
+    var freeMemory = [];
+    var servers = getChartCache();
+    if(servers.length > 0){
+        var memoryArray = servers[0].freeMemory;
+        //illution of movement
+        var temp = memoryArray.shift();
+        memoryArray.push(temp)
+    
+        var iCount = 1;
+        memoryArray.map(function(memory){
+            if(memory.freeMemory != null){
+                freeMemory.push([iCount, parseFloat(memory.freeMemory)])
+                iCount++;
+            }
+            
+        });
+
+            
+        return [
+            {
+                "series1":{label: "free ram", data: freeMemory} 
+            }
+        ];
+    }else{
+        
+        freeMemory = [];
+        freeMemory.push([0, 0]);
+
+        return [
+            {
+                "series1":{label: "free ram", data: freeMemory} 
+            }
+        ];
+    }
+
+}
+
+function getCpuUsage(){
+    var idel = [];
+    var user = [];
+    var system = []; 
+    
+    var servers = getChartCache();
+    if(servers.length > 0){
+        var url = servers[0].adminServiceUrl;
+        var usageArray = servers[0].cpuUsage;
+        //illution of movement
+        var temp = usageArray.shift();
+        usageArray.push(temp);
+    
+        var iCount = 1;
+        usageArray.map(function(usage){
+
+
+            idel.push([iCount, parseFloat(usage.idel)]);
+            user.push([iCount, parseFloat(usage.user)]);
+            system.push([iCount, parseFloat(usage.system)]);
+            
+            iCount++;
+        });
+
+
+    
+        return [
+            {
+                "series1":{label: "idel", data: idel} ,
+                "series2":{label: "user", data: user}, 
+                "series3":{label: "system", data: system}
+            }
+        ];
+    }else{
+        
+        idel.push([0, 0]);
+        user.push([0, 0]);
+        system.push([0, 0]);
+
+        return [
+            {
+                "series1":{label: "idel", data: idel} ,
+                "series2":{label: "user", data: user}, 
+                "series3":{label: "system", data: system}
+            }
+        ];
+    }
+}
+
+
+
+//test random method
 function getRandomData() {
 
     if (data1.length > 0)
@@ -35,10 +282,6 @@ function getRandomData() {
         {"series1":{label: "sin(x sin(x))", data: data1} , "series2":{label: "cos(x cos(x))", data: data2 }}
     ];
 
-}
-
-if(type == 'data'){
-	print(getRandomData());
 }
 
 

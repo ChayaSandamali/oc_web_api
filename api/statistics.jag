@@ -1,10 +1,19 @@
 <%
+
+/*
+    RESTFULL
+    /{context}/{dir}/{page}/{type}/{asset}/{id} (id => url)
+    [1]/oc/api/stat/static/machine/url (static/dynamic & singular format)
+    [2]/oc/api/stat/dynamic/machines ()
+*/
+
 include("../util/operations_center_cache_manager.jag");
 include("../util/metadata.jag");
 
-var url = request.getParameter('url'); //adminServiceUrl or Ip of the pc
-var asset = request.getParameter('asset'); //(machine or server) plural -> all / singuler -> one
-var dataType = request.getParameter('type'); //(static / dynamic)
+//var url = request.getParameter('url'); //adminServiceUrl or Ip of the pc
+//var asset = request.getParameter('asset'); //(machine or server) plural -> all / singuler -> one
+//var dataType = request.getParameter('type'); //(static / dynamic)
+
 
 /*
 	//static data
@@ -12,6 +21,118 @@ var dataType = request.getParameter('type'); //(static / dynamic)
 	base_url/asset=servers&type-dynamic
 
 */
+
+
+var uriMatcher = new URIMatcher(request.getRequestURI());
+	//print(request.getRequestURI());
+var elements = {};
+
+
+if(uriMatcher.match('/{context}/{dir}/{page}/{type}/{asset}/{id}')) {
+   elements = uriMatcher.elements();
+}
+
+if(uriMatcher.match('/{context}/{dir}/{page}/{type}/{asset}')) {
+   elements = uriMatcher.elements();
+}
+
+/*print(elements.context+'<br/>')
+print(elements.dir+'<br/>')
+print(elements.page+'<br/>')
+print(elements.type+'<br/>')
+print(elements.asset+'<br/>')
+print(elements.id+'<br/>')*/
+
+///*
+	
+switch(elements.type){	
+
+	//dynamic data route
+	case 'dynamic':				
+		if(typeof elements.id != 'undefined'){
+			assetRouteDynamic(elements.asset, elements.id);	
+		}else{
+			assetRouteDynamic(elements.asset);					
+		}
+		
+	break;
+
+
+	//static data route
+	case 'static':
+		if(typeof elements.id != 'undefined'){
+			assetRouteStatic(elements.asset, elements.id);	
+		}else{			
+			assetRouteStatic(elements.asset);					
+		}
+	break;
+}
+
+
+	
+
+	
+	
+
+function assetRouteStatic(asset, id){	
+	var data;
+	switch(asset){
+		case 'server':
+			data = getServerMeta(id);
+		break;
+
+		case 'machine':
+			data = getMachineMeta(id);
+		break;
+
+		//--------------------
+
+		case 'servers':
+			data = getAllServerMeta();
+		break;
+
+		case 'machines':
+			data = getAllMachineMeta();
+		break;
+	}
+
+	print(data);
+}
+
+function assetRouteDynamic(asset, id){	
+	var data;
+	switch(asset){
+		case 'server':
+			data = "";
+		break;
+
+		case 'machine':
+			data = "";
+		break;
+
+		//--------------------
+
+		case 'servers':
+			data = getServers();
+		break;
+
+		case 'machines':
+			data = getMachines();
+		break;
+	}
+
+	print(data);
+}
+
+
+
+//*/
+
+	//--------------------------------------
+
+
+/*
+
 
 
 //static data display (single data)
@@ -104,7 +225,7 @@ else if(asset && dataType == 'dynamic'){
 
 
 //graph data display
-
+*/
 
 
 %>
