@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+    <ModulePrefs title="OC Statistics" />
+    <UserPref name="dataSource" display_name="Data Source" default_value="/oc/api/stat/dynamic/servers"/>
+    <UserPref name="interval" display_name="Update Intervals (s)" default_value="No" />
+    
+
+    <Content type="html">
+     <![CDATA[
+     
+      <link rel="stylesheet" href="/oc/gadgets/oc-stat-table/css/jquery.dataTables.css">
+      <link rel="stylesheet" href="/oc/gadgets/oc-stat-table/plugins/jquery_ui/jquery-ui.min.css">
+      
+        
+
+      
+      <script language="javascript" type="text/javascript" src="js/jquery.js"></script>
+      <script language="javascript" type="text/javascript" src="plugins/jquery_ui/jquery-ui.min.js"></script>
+      
+      <script src="js/jquery.dataTables.min.js"></script>
+
+       
+       
+       <!-- create this table according to common data structure-->
+
+       <div id="dialog"></div>
+
+
+        <table id="job_history">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Domain</th>
+                <th>Sub Domain</th>
+                <th>Free Memory</th>
+                <th>Up Time</th>
+                <th>Thread Count</th>
+                <th>Load Avg</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Apis</th>
+                <th>Commands</th>
+              </tr>
+            </thead>
+            
+        <tbody id="table-stat-body"></tbody>
+       
+       <script type="text/javascript" src="js/gadget.js"></script>
+
+
+      ]]>
+    </Content>
+</Module>

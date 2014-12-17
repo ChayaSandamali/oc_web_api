@@ -1,0 +1,48 @@
+{
+  "static": {
+    "machine": {
+      "ip": "???",
+      "osName": "???",
+      "cpuCount": "???",
+      "cpuSpeed": "???",
+      "totalMemory": "???"
+      
+    },
+    "server": {
+      "name": "???",
+      "domain": "???",
+      "subDomain": "???",
+      "adminServiceUrl": "???",
+      "startUpTime": "???",
+      "patches": ["???", "???", "???"]
+    },
+    "asset3": {
+      
+    }
+    
+  },
+  
+  "dynamic": {
+    
+    "machine": {
+      "ip": "val"
+    },
+    "server": {
+      "adminServiceUrl": "???",
+      "status": "???",
+      "reportedTime": "???",
+      "freeMemory": "???",
+      "usageIdle": "???",
+      "usageSystem": "???",
+      "usageUser": "???",
+      "serverUpTime": "???",
+      "threadCount": "???",
+      "loadAverage": "???"
+      
+    },
+    "asset3": {
+      
+    }
+    
+  }
+}
