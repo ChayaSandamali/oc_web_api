@@ -32,6 +32,10 @@ if(uriMatcher.match('/{context}/{dir}/{page}/{type}/{asset}/{id}')) {
    elements = uriMatcher.elements();
 }
 
+if(uriMatcher.match('/{context}/{dir}/{page}/{type}/{asset}/{command}/{id}')) {
+   elements = uriMatcher.elements();
+}
+
 if(uriMatcher.match('/{context}/{dir}/{page}/{type}/{asset}')) {
    elements = uriMatcher.elements();
 }
@@ -48,10 +52,35 @@ print(elements.id+'<br/>')*/
 switch(elements.type){	
 
 	//dynamic data route
-	case 'dynamic':				
-		if(typeof elements.id != 'undefined'){
+	case 'dynamic':	
+		//send commands			
+		if(typeof elements.id != 'undefined' && typeof elements.command != 'undefined'){
+			//print(elements.command)
+			switch(elements.command){
+				case 'restart':
+					addCommand(elements.id, Command.RESTART, Status.RESTART);
+				break;
+
+				case 'grestart':
+					addCommand(elements.id, Command.GRACEFULL_RESTART, Status.GRACEFULL_RESTART);
+				break;
+
+				case 'shutdown':
+					addCommand(elements.id, Command.SHUTDOWN, Status.SHUTDOWN);
+				break;
+
+				case 'gshutdown':
+					addCommand(elements.id, Command.GRACEFULL_SHUTDOWN, Status.GRACEFULL_SHUTDOWN);
+				break;
+			}
+			
+		}
+		//get dynamic data for specific asset
+		else if(typeof elements.id != 'undefined'){
 			assetRouteDynamic(elements.asset, elements.id);	
-		}else{
+		}
+		//get all asset data
+		else{
 			assetRouteDynamic(elements.asset);					
 		}
 		

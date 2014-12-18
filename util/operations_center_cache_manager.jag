@@ -118,7 +118,7 @@ function getChartCache(){
 */
 function addServer(machineId, name, domain, subDomain, adminServiceUrl, startUpTime, patches) {
     // [DEBUG]
-    /*
+    
     log.info(machineId)
     log.info(name)
     log.info(domain)
@@ -126,8 +126,8 @@ function addServer(machineId, name, domain, subDomain, adminServiceUrl, startUpT
     log.info(adminServiceUrl)
     log.info(startUpTime)
     log.info(patches)
-    */
-
+    
+    
 
 
     var ocServers = getServers();
@@ -186,8 +186,8 @@ function test(test){
 
 //newly added method for cache the cpu usage plot data for 10 min
 function updateCupUsage(adminServiceUrl, user, idel, system, freeMemory, loadAverage){
-    //log.info('-----')
-    chartCache = null;
+    // log.info('-----')
+    //chartCache = null;
     var chartCache = getChartCache();
     //log.info(chartCache[0])
 
@@ -338,9 +338,10 @@ function updateCupUsage(adminServiceUrl, user, idel, system, freeMemory, loadAve
 
 function updateServer(adminServiceUrl, serverUpTime, threadCount, freeMemory, usageIdle, usageSystem, usageUser, loadAverage){
     var log = new Log('updateServer');
+
     // [DEBUG]
-    /*
-    log.info(adminServiceUrl)
+    
+   /* log.info(adminServiceUrl)
     log.info(serverUpTime)
     log.info(threadCount)
     log.info(freeMemory)
@@ -348,8 +349,8 @@ function updateServer(adminServiceUrl, serverUpTime, threadCount, freeMemory, us
     log.info(usageSystem)
     log.info(usageUser)
     log.info(loadAverage)
-    log.info('\n')
-    //*/
+    log.info('\n')*/
+    //
 
 
     var ocServers = getServers();
@@ -427,8 +428,8 @@ function addCommand(adminServiceUrl, command, status){
     for (var index = 0; index < ocServers.length; index++){
         var ocServer = ocServers[index];
         if (ocServer != null) {
-            if (ocServer.adminServiceUrl == adminServiceUrl) {
-               // log.info(ocServer.name)     
+            if (getId(ocServer.adminServiceUrl) == adminServiceUrl) {
+                //log.info("----------"+ocServer.name+"-------------")     
                 ocServer.command = command;
                 ocServer.status = status;
                 ocServers[ocServer.id] = ocServer;
@@ -441,6 +442,19 @@ function addCommand(adminServiceUrl, command, status){
     // }
     // print(ocServer)
     //log.info("Command: " + command)
+}
+
+function getId(url){
+    var id = url;
+    var re = new RegExp(':', 'g');
+    id = id.replace(re, '');
+
+    re = new RegExp('/', 'g');
+    id = id.replace(re, '');
+
+    id = id.split('.').join('');
+
+    return id;
 }
 
 

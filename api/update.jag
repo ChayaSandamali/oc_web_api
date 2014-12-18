@@ -11,9 +11,11 @@ include("../util/operations_center_cache_manager.jag");
 	var servers = getServers(); 
 	var restartContent = [];
 
-	//log.info(ocMessage)
+	//log.info(ocMessage.synchronizationRequest)
 
-	//log.info(servers[0])
+	//log.info(servers.length)
+
+
 	if(ocMessage.synchronizationRequest){
 
 		
@@ -31,15 +33,18 @@ include("../util/operations_center_cache_manager.jag");
             usageUser
         */
 
+
+
 		var msg = ocMessage.synchronizationRequest;
-		//log.info(msg)
-		//log.info(msg.adminServiceUrl)		
+		//log.info('updating....')
+		// log.info(msg)
+		// log.info(msg.adminServiceUrl)		
 		//update the server statistics
 		//updateServer(msg.adminServiceUrl, msg.os, msg.ramFree, msg.usageSystem, msg.usageIdle, msg.usageUser, msg.serverUptime, msg.threadCount);
 		updateServer(msg.adminServiceUrl, msg.serverUpTime, parseFloat(msg.threadCount), parseFloat(msg.freeMemory), parseFloat(msg.idleCpuUsage), parseFloat(msg.systemCpuUsage), parseFloat(msg.userCpuUsage), parseFloat(msg.systemLoadAverage));
 		
 		//new cache update for chart 
-		updateCupUsage(msg.adminServiceUrl, msg.userCpuUsage, msg.idleCpuUsage, msg.systemCpuUsage, msg.freeMemory, msg.systemLoadAverage);
+		updateCupUsage(msg.adminServiceUrl, parseFloat(msg.userCpuUsage), parseFloat(msg.idleCpuUsage), parseFloat(msg.systemCpuUsage), parseFloat(msg.freeMemory), parseFloat(msg.systemLoadAverage));
 
 		//updateMachine(msg.ip, msg.os, msg.cpuCount, msg.cpuSpeed, msg.ramTotal);
 
@@ -161,13 +166,13 @@ include("../util/operations_center_cache_manager.jag");
 
 	
 	function sendResponse(content){
-                var customResponse = {};
-                var synchronizationResponse = {};
-                customResponse.synchronizationResponse = synchronizationResponse;
-                
-                synchronizationResponse.status = "updated";
-                synchronizationResponse.serverId = "2";
-                synchronizationResponse.command = content.command;
+        var customResponse = {};
+        var synchronizationResponse = {};
+        customResponse.synchronizationResponse = synchronizationResponse;
+        
+        synchronizationResponse.status = "updated";
+        synchronizationResponse.serverId = "2";
+        synchronizationResponse.command = content.command;
 		response.addHeader("custom-header", "jaggery_response");
 		response.contentType = 'application/json';
 		response.content = customResponse;
