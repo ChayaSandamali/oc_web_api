@@ -48,7 +48,7 @@ $(function(){
               var loadAverage = json.loadAverage;
 
               var commands = "<a href='#'>Restart</a><br/>";
-                  commands += "<a href='#'>G Restart</a><br/>";
+                  commands += "<a href='#'>GRestart</a><br/>";
                   commands += "<a href='#'>Shutdown</a><br/>";
                   commands += "<a href='#'>GShutdown</a><br/>";
              
@@ -63,7 +63,7 @@ $(function(){
                                 loadAverage,
                                 adminServiceUrl,
                                 status,
-                                "",
+                                "Click",
                                 commands
                                 ]);
           });
@@ -79,15 +79,19 @@ $(function(){
               //API view dialog box start
               var url = "";
               var apiCol = "";
+              var name = "";
               $(document).on("click", "table tr td", function(e) {
-                  apiCol = $(this).text();
+                  apiCol = $(this).text();                  
               });
 
               $(document).on("click", "table tr", function(e) {
                   var tds = $(this).find('td');
-                  tds.map(function(td){
+                  name = $(tds[0]).text();
+                  console.log(name)
+
+                  tds.map(function(td){                      
                       var text = $(tds[td]).text();
-                      if(text.indexOf('https') > -1){
+                      if(text.indexOf('https') > -1){                          
                           url = text;
                       }
                   });
@@ -102,16 +106,42 @@ $(function(){
                       inputs += getInputField(memoryApi);
                       inputs += getInputField(usageApi);
 
-                  if(apiCol == ""){
+                  if(apiCol.length > 0){                    
                     $('#dialog').html(inputs);
                     $("#dialog").dialog({
-                      width:'400'
+                      width:'450',
+                      title: name + " APIs"
                     });
                   }
                   
               });
 
               //API view dialog end
+
+
+              //Command sending
+              ///oc/api/stat/{command}/{command_tag}/{id}
+              $(document).on("click", "table tr td a", function(e) {
+                var tempUrl = "";
+                var command = $(this).text().toLowerCase();
+                var link = "";
+                var tds = $(this).parent().parent().find('td');
+
+                tds.map(function(td){
+                      var text = $(tds[td]).text();
+                      if(text.indexOf('https') > -1){
+                         tempUrl = text;
+                      }
+                });
+
+                link = '/oc/api/stat/dynamic/server/' + command + '/' + getId(tempUrl);
+                
+                $.get(link, function(data,status){
+                  console.log("Data: " + data + "\nStatus: " + status);
+                });
+              
+                return false;                                   
+              });
 
               
               function getInputField(val){
@@ -138,17 +168,13 @@ $(function(){
              
               function getInterval(s){
                 var i = 0;
-                try{
 
-                  if(isNaN(parseFloat(""+s))){
+                 if(isNaN(parseFloat(""+s))){
                     i = 0;
                   }else{
                     i = parseFloat(""+s);
                   }
-                }
-                catch(e){
-                  i = 0;
-                }
+                  
                 return i;
               }
 
